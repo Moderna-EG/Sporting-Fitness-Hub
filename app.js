@@ -7,10 +7,16 @@ const DB = require('./config/db').connect()
 
 const app = express()
 
+// Middlewares
+
 app.use(morgan('dev'))
 app.use(bodyParser.json())
 
+// Routes
+
 app.use('/api', require('./routes/authRoute'))
+app.use('/api', require('./routes/packagesRoute'))
+app.use('/api', require('./routes/membersPackagesRoute'))
 
 app.get('/', (request, response) => {
     return response.status(200).send('Received with love')
