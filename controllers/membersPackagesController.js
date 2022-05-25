@@ -167,7 +167,7 @@ const searchMember = async (request, response) => {
 
         const memberPackages = await memberPackageModel
         .find({ club: qClub, membership: qMembership })
-        .select({ updatedAt: 0, __v: 0 })
+        .select({ updatedAt: 0, __v: 0, memberName: 0, memberPhone: 0, membership: 0, club: 0 })
         .sort({ active: 1 })
 
         return response.status(200).json({
