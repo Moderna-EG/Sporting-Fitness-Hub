@@ -210,7 +210,7 @@ const getClubMembers = async (request, response) => {
         const members = await memberPackageModel
         .aggregate([
             { $match: { club: request.params.club } },
-            { $project: { memberName: 1, memberPhone: 1, membership: 1, club: 1 } }
+            { $project: { memberName: 1, memberPhone: 1, membership: 1, club: 1, memberMail: 1 } }
         ])
 
         return response.status(200).json({
