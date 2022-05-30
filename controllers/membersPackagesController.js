@@ -76,11 +76,21 @@ const addPackage = async (request, response) => {
             })
         }
 
+        const memberRegisteredPackages = await memberPackageModel
+        .find({ club: club, membership: membership, active: true })
+
+        if(memberRegisteredPackages.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'this member is already registered in a package'
+            })
+        }
+
         memberPackage = { ...memberPackage, packageId, club, registrationMethod, membership }
 
         if(club != 'sporting') {
 
-            const { memberName, memberPhone } = request.body
+            const { memberName, memberPhone, memberMail } = request.body
 
             if(!memberName) {
                 return response.status(406).json({
@@ -98,7 +108,15 @@ const addPackage = async (request, response) => {
                 })
             }
 
-            memberPackage = { ...memberPackage, memberName, memberPhone}
+            if(!memberMail) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'member email is required',
+                    field: 'member mail'
+                })
+            }
+
+            memberPackage = { ...memberPackage, memberName, memberPhone, memberMail }
 
         }
 
@@ -185,4 +203,88 @@ const searchMember = async (request, response) => {
     }
 }
 
-module.exports = { addPackage, searchMember }
+const getClubMembers = async (request, response) => {
+
+    try {
+
+        const members = await memberPackageModel
+        .aggregate([
+            { $match: { club: request.params.club } },
+            { $project: { memberName: 1, memberPhone: 1, membership: 1, club: 1 } }
+        ])
+
+        return response.status(200).json({
+            ok: true,
+            members: members
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const updateMemberAttendance = async (request, response) => {
+
+    try {
+
+        const { registeredPackageId } = request.params
+
+        if(!isObjectId(registeredPackageId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid registered package Id'
+            })
+        }
+
+        const memberRegisteredPackage = await memberPackageModel.find({ _id: registeredPackageId })
+
+        if(memberRegisteredPackage.length == 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'no registered package with that Id'
+            })
+        }
+
+        const memberPackage = memberRegisteredPackage[0]
+
+        const packageData = await packageModel.find({ _id: memberPackage.packageId })
+
+        const package = packageData[0]
+
+       if(memberPackage.attended == package.attendance) {
+           return response.status(406).json({
+               ok: false,
+               message: 'you attended all the sessions of this package'
+
+           })
+       }
+
+       const NEW_SESSION = 1
+       let updatedFields = { attended: memberPackage.attended + NEW_SESSION, active: true }
+
+       if((memberPackage.attended + NEW_SESSION) == package.attendance) {
+           updatedFields.active = false
+       }    
+
+       const updatedMemberPackage = await memberPackageModel
+       .findOneAndUpdate({ _id: registeredPackageId }, updatedFields, { new: true })
+
+        return response.status(200).json({
+            ok: true,
+            memberPackage: updatedMemberPackage
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+module.exports = { addPackage, searchMember, getClubMembers, updateMemberAttendance }

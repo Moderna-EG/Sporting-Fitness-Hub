@@ -4,6 +4,7 @@ const MembersPackagesSchema = new mongoose.Schema({
     packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package', required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     memberName: { type: String },
+    memberMail: { type: String },
     memberPhone: { type: String },
     membership: { type: Number, required: true },
     club: { type: String, required: true, enum: ['sporting', 'jazeera', 'saed'] },
