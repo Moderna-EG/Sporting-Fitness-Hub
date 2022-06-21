@@ -1,7 +1,9 @@
 const router = require('express').Router()
 const membersPackagesController = require('../controllers/membersPackagesController')
 
-router.post('/members-packages', (request, response) => membersPackagesController.addPackage(request, response))
+router.post('/members-packages/offline', (request, response) => membersPackagesController.registerOfflinePackage(request, response))
+
+router.post('/members-packages/online', (request, response) => membersPackagesController.registerOnlinePackage(request, response))
 
 router.get('/members-packages', (request, response) => membersPackagesController.searchMember(request, response))
 
