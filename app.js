@@ -3,6 +3,7 @@ const express = require('express')
 const morgan = require('morgan')
 const dotenv = require('dotenv').config()
 const config = require('./config/config')
+const cors = require('cors')
 const DB = require('./config/db').connect()
 
 const app = express()
@@ -11,6 +12,7 @@ const app = express()
 
 app.use(morgan('dev'))
 app.use(bodyParser.json())
+app.use(cors())
 
 // Routes
 
