@@ -17,6 +17,7 @@ app.use(bodyParser.json())
 app.use('/api', require('./routes/authRoute'))
 app.use('/api', require('./routes/packagesRoute'))
 app.use('/api', require('./routes/membersPackagesRoute'))
+app.use('/api', require('./routes/usersRoute'))
 
 app.get('/', (request, response) => {
     return response.status(200).send('Received with love')

@@ -4,6 +4,37 @@ const userModel = require('../models/UserModel')
 const memberPackageModel = require('../models/MembersPackagesModel')
 const { isObjectId, isClubValid, isRegistrationMethodValid } = require('../utils/utils')
 
+const getRegisteredPackages = async (request, response) => {
+
+    try {
+
+        const registeredPackages = await memberPackageModel.aggregate([
+            {
+                $lookup: { from: 'packages', localField: 'packageId', foreignField: '_id', as: 'package' }
+            },
+            {
+                $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' }
+            },
+            {
+                $project: { __v: 0, updatedAt: 0, packageId: 0, userId: 0 }
+            }
+        ])
+
+        return response.status(200).json({
+            ok: true,
+            registeredPackages
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+
 
 const registerOfflinePackage = async (request, response) => {
 
@@ -408,4 +439,11 @@ const updateMemberAttendance = async (request, response) => {
     }
 }
 
-module.exports = { registerOfflinePackage, registerOnlinePackage, searchMember, getClubMembers, updateMemberAttendance }
+module.exports = {
+    getRegisteredPackages,
+    registerOfflinePackage, 
+    registerOnlinePackage, 
+    searchMember, 
+    getClubMembers, 
+    updateMemberAttendance
+ }
