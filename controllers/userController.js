@@ -139,6 +139,56 @@ const addUser = async (request, response) => {
     }
 }
 
+const getClubMembers = async (request, response) => {
+
+    try {
+
+        const { club } = request.params
+
+        const clubMembers = await userModel
+        .find({ club: club })
+        .select({ __v: 0, updatedAt: 0, password: 0 })
+
+        return response.status(200).json({
+            ok: true,
+            clubMembers: clubMembers
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const getByMembership = async (request, response) => {
+
+    try {
+
+        const { club, membership } = request.params
+
+        const member = await userModel
+        .findOne({ club, membership })
+        .select({ __v: 0, updatedAt: 0, password: 0 })
+
+        return response.status(200).json({
+            ok: true,
+            member: member
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 module.exports = {
-    getUsers
+    getUsers,
+    getClubMembers,
+    getByMembership
 }

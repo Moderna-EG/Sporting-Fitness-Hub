@@ -5,5 +5,8 @@ router.get('/users', (request, response) => usersController.getUsers(request, re
 
 router.post('/users', (request, response) => usersController.addUser(request, response))
 
+router.get('/members/clubs/:club', (request, response) => usersController.getClubMembers(request, response))
+
+router.get('/members/clubs/:club/memberships/:membership', (request, response) => usersController.getByMembership(request, response))
 
 module.exports = router

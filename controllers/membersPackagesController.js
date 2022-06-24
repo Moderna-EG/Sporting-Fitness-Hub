@@ -80,28 +80,11 @@ const registerOfflinePackage = async (request, response) => {
         const { packageId, userId, registrationUserId } = request.body
         let memberPackage = {}
 
-        if(!packageId) {
+        const usedMemberPackages = await memberPackageModel.find({ userId, active: true })
+        if(usedMemberPackages.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'package Id is required',
-                field: 'package Id'
-            })
-        }
-
-        if(!isObjectId(packageId)) {
-            return response.status(406).json({
-                ok: false,
-                message: 'invalid package Id',
-                field: 'package Id'
-            })
-        }
-
-        const package = await packageModel.findById(packageId)
-        if(!package) {
-            return response.status(406).json({
-                ok: false,
-                message: 'invalid package Id',
-                field: 'package Id'
+                message: 'already registered in a package'
             })
         }
 
@@ -129,6 +112,32 @@ const registerOfflinePackage = async (request, response) => {
                 field: 'registration user Id'
             })
         }
+
+        if(!packageId) {
+            return response.status(406).json({
+                ok: false,
+                message: 'package Id is required',
+                field: 'package Id'
+            })
+        }
+
+        if(!isObjectId(packageId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid package Id',
+                field: 'package Id'
+            })
+        }
+
+        const package = await packageModel.findById(packageId)
+        if(!package) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid package Id',
+                field: 'package Id'
+            })
+        }
+
         if(!registrationUserId) {
             return response.status(406).json({
                 ok: false,
