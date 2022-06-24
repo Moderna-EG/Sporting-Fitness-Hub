@@ -2,7 +2,9 @@ const config = require('../config/config')
 const packageModel = require('../models/PackageModel')
 const userModel = require('../models/UserModel')
 const memberPackageModel = require('../models/MembersPackagesModel')
-const { isObjectId, isClubValid, isRegistrationMethodValid } = require('../utils/utils')
+const { isObjectId, isClubValid, isRegistrationMethodValid, isPaymentMethodValid } = require('../utils/utils')
+const UserModel = require('../models/UserModel')
+const mongoose = require('mongoose')
 
 const getRegisteredPackages = async (request, response) => {
 
@@ -34,13 +36,48 @@ const getRegisteredPackages = async (request, response) => {
     }
 }
 
+const getMemberRegisteredPackages = async (request, response) => {
+
+    try {
+
+        const { memberId } = request.params
+
+        if(!isObjectId(memberId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member Id'
+            })
+        }
+
+        console.log(memberId)
+
+        const memberPackages = await memberPackageModel
+        .aggregate([
+            { $match: { userId: mongoose.Types.ObjectId(memberId) }},
+            { $lookup: { from: 'packages', localField: 'packageId', foreignField: '_id', as: 'package' }},
+            { $sort: { active: 1 }},
+            { $project: { __v: 0, updatedAt: 0, packageId: 0 }}
+        ])
+
+        return response.status(200).json({
+            ok: true,
+            memberPackages: memberPackages
+        })
 
 
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
 const registerOfflinePackage = async (request, response) => {
 
     try {
 
-        const { club, registrationMethod, packageId, membership } = request.body
+        const { packageId, userId, registrationUserId } = request.body
         let memberPackage = {}
 
         if(!packageId) {
@@ -68,128 +105,65 @@ const registerOfflinePackage = async (request, response) => {
             })
         }
 
-        if(!club) {
-            return response.status(406).json({
-                ok: false,
-                message: 'club name is required',
-                field:  'club name'
-            })
-        }
-
-        if(!isClubValid(club)) {
-            return response.status(406).json({
-                ok: false,
-                message: 'invalid club name',
-                field: 'club name'
-            })
-        }
-
-        if(!registrationMethod) {
-            return response.status(406).json({
-                ok: false,
-                message: 'registration method is required',
-                field: 'registration method'
-            })
-        }
-
-        if(!isRegistrationMethodValid(registrationMethod)) {
-            return response.status(406).json({
-                ok: false,
-                message: 'invalid registration method',
-                field: 'registration method'
-            })
-        }
-
-        if(!membership) {
-            return response.status(406).json({
-                ok: false,
-                message: 'membership is required',
-                field: 'membership'
-            })
-        }
-
-        const memberRegisteredPackages = await memberPackageModel
-        .find({ club: club, membership: membership, active: true })
-
-        if(memberRegisteredPackages.length != 0) {
-            return response.status(406).json({
-                ok: false,
-                message: 'this member is already registered in a package'
-            })
-        }
-
-        memberPackage = { ...memberPackage, packageId, club, registrationMethod, membership }
-
-        if(club != 'sporting') {
-
-            const { memberName, memberPhone, memberMail } = request.body
-
-            if(!memberName) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member name is required',
-                    field: 'member name'
-                })
-            }
-
-            if(!memberPhone) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member phone is required',
-                    field: 'member phone'
-                })
-            }
-
-            if(!memberMail) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member email is required',
-                    field: 'member mail'
-                })
-            }
-
-            memberPackage = { ...memberPackage, memberName, memberPhone, memberMail }
-
-        }
-
-        const { userId } = request.body
-        const paid = true
-        const paymentMethod = 'offline'
-
         if(!userId) {
             return response.status(406).json({
                 ok: false,
-                message: 'userId Id is required',
-                field: 'userId Id'
+                message: 'user Id is required',
+                field: 'user Id'
             })
         }
 
         if(!isObjectId(userId)) {
             return response.status(406).json({
                 ok: false,
-                messsage: 'invalid userId Id',
-                field: 'userId Id'
+                message: 'invalid user Id',
+                field: 'user Id'
             })
         }
 
-        const user = await userModel.findById(userId)
-        if(!user) {
+        const user = await userModel.find({ _id: userId, role: 'MEMBER' })
+        if(user.length == 0) {
             return response.status(406).json({
                 ok: false,
-                messsage: 'invalid userId Id',
-                field: 'userId Id'
+                message: 'invalid user Id',
+                field: 'registration user Id'
+            })
+        }
+        if(!registrationUserId) {
+            return response.status(406).json({
+                ok: false,
+                message: 'registration user Id is required',
+                field: 'registration user Id'
             })
         }
 
-        memberPackage = { ...memberPackage, userId, paid, paymentMethod }
+        if(!isObjectId(registrationUserId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid registration user Id',
+                field: 'registration user Id'
+            })
+        }
+
+        const registrationUser = await userModel.find({ _id: registrationUserId, role: 'USER' })
+        if(registrationUser.length == 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid registration user Id',
+                field: 'registration user Id'
+            })
+        }
 
 
-        const registeredPackage = new memberPackageModel(memberPackage)
-        const savePackage = await registeredPackage.save()
+        memberPackage = { packageId, userId, registrationUserId, registrationMethod: 'offline', paymentMethod: 'cash',  paid: true }
+
+        const registerPackage = new memberPackageModel(memberPackage)
+        const savedPackageDetails = await registerPackage.save()
 
         return response.status(200).json({
             ok: true,
-            memberPackage: savePackage
+            registeredPackage: savedPackageDetails,
+            message: 'registered package successfully'
         })
 
     } catch(error) {
@@ -205,8 +179,42 @@ const registerOnlinePackage = async (request, response) => {
 
     try {
 
-        const { club, packageId, membership } = request.body
+        const { packageId, userId, paymentMethod } = request.body
         let memberPackage = {}
+
+        if(!userId) {
+            return response.status(406).json({
+                ok: false,
+                message: 'user Id is required',
+                field: 'user Id'
+            })
+        }
+
+        if(!isObjectId(userId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id',
+                field: 'user Id'
+            })
+        }
+
+        const user = await userModel.find({ _id: userId, role: 'MEMBER' })
+        if(user.length == 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id',
+                field: 'user Id'
+            })
+        }
+
+        const registeredPackages = await memberPackageModel.find({ userId: userId, active: true })
+
+        if(registeredPackages.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'already registered in a package'
+            })
+        }
 
         if(!packageId) {
             return response.status(406).json({
@@ -233,85 +241,36 @@ const registerOnlinePackage = async (request, response) => {
             })
         }
 
-        if(!club) {
+        if(!paymentMethod) {
             return response.status(406).json({
                 ok: false,
-                message: 'club name is required',
-                field:  'club name'
+                message: 'payment method is required',
+                field: 'payment method'
             })
         }
 
-        if(!isClubValid(club)) {
+        if(!isPaymentMethodValid(paymentMethod)) {
             return response.status(406).json({
                 ok: false,
-                message: 'invalid club name',
-                field: 'club name'
+                message: 'invalid payment method',
+                field: 'payment method'
             })
         }
 
-        if(!membership) {
-            return response.status(406).json({
-                ok: false,
-                message: 'membership is required',
-                field: 'membership'
-            })
+        let paid = false
+        if(paymentMethod == 'cash') {
+            paid = true
         }
 
-        const memberRegisteredPackages = await memberPackageModel
-        .find({ club: club, membership: membership, active: true })
+        memberPackage = { packageId, userId, registrationMethod: 'online', paymentMethod,  paid }
 
-        if(memberRegisteredPackages.length != 0) {
-            return response.status(406).json({
-                ok: false,
-                message: 'this member is already registered in a package'
-            })
-        }
-
-        memberPackage = { ...memberPackage, club, membership, packageId }
-
-        if(club != 'sporting') {
-
-            const { memberName, memberPhone, memberMail } = request.body
-
-            if(!memberName) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member name is required',
-                    field: 'member name'
-                })
-            }
-
-            if(!memberPhone) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member phone is required',
-                    field: 'member phone'
-                })
-            }
-
-            if(!memberMail) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'member email is required',
-                    field: 'member mail'
-                })
-            }
-
-            memberPackage = { ...memberPackage, memberName, memberPhone, memberMail }
-
-        }
-
-        const paid = false
-        const paymentMethod = 'online'
-
-        memberPackage = { ...memberPackage, paid, paymentMethod }
-
-        const registeredPackage = new memberPackageModel(memberPackage)
-        const savePackage = await registeredPackage.save()
+        const registerPackage = new memberPackageModel(memberPackage)
+        const savedPackageDetails = await registerPackage.save()
 
         return response.status(200).json({
             ok: true,
-            message: savePackage
+            registeredPackage: savedPackageDetails,
+            message: 'registered package successfully'
         })
 
     } catch(error) {
@@ -445,5 +404,6 @@ module.exports = {
     registerOnlinePackage, 
     searchMember, 
     getClubMembers, 
-    updateMemberAttendance
+    updateMemberAttendance,
+    getMemberRegisteredPackages
  }

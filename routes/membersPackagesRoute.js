@@ -13,5 +13,7 @@ router.get('/members-packages/:club', (request, response) => membersPackagesCont
 
 router.put('/members-packages/attended/:registeredPackageId', (request, response) => membersPackagesController.updateMemberAttendance(request, response))
 
+router.get('/members-packages/members/:memberId', (request, response) => membersPackagesController.getMemberRegisteredPackages(request, response))
+
 module.exports = router
 

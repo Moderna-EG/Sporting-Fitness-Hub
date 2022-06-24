@@ -3,14 +3,11 @@ const MembersPackagesSchema = new mongoose.Schema({
 
     packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package', required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    memberName: { type: String },
-    memberMail: { type: String },
-    memberPhone: { type: String },
-    membership: { type: Number, required: true },
-    club: { type: String, required: true, enum: ['sporting', 'jazeera', 'saed'] },
+    registrationUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     active: { type: Boolean, default: true },
     paid: { type: Boolean, default: false },
-    paymentMethod: { type: String, default: 'offline', enum: ['offline', 'online'] },
+    paymentMethod: { type: String, default: 'CASH', enum: ['CASH', 'CARD', 'cash', 'card'] },
+    registrationMethod: { type: String, required: true, enum: ['ONLINE', 'OFFLINE', 'online', 'offline'] },
     attended: { type: Number, default: 0 },
 
 }, { timestamps: true })

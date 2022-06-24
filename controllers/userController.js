@@ -1,4 +1,5 @@
 const userModel = require('../models/UserModel')
+const { isClubValid } = require('../utils/utils')
 
 const getUsers = async (request, response) => {
 
@@ -25,7 +26,7 @@ const addUser = async (request, response) => {
 
     try {
 
-        const { username, email, password, phone } = request.body
+        const { username, email, password, phone, role, club, membership } = request.body
 
         if(!username) {
             return response.status(406).json({
@@ -49,7 +50,6 @@ const addUser = async (request, response) => {
             })
         }
 
-
         if(!password) {
             return response.status(406).json({
                 ok: false,
@@ -68,7 +68,49 @@ const addUser = async (request, response) => {
         if(usedPhone.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'phone is already used'
+                message: 'phone is already used',
+                field: 'phone'
+            })
+        }
+
+        if(!role) {
+            return response.status(406).json({
+                ok: false,
+                message: 'role is required',
+                field: 'role'
+            })
+        }
+
+        if(!club) {
+            return response.status(406).json({
+                ok: false,
+                message: 'club is required',
+                field: 'club'
+            })
+        }
+
+        if(!isClubValid(club)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'this club is not registered',
+                field: 'membership'
+            })
+        }
+
+        if(!membership) {
+            return response.status(406).json({
+                ok: false,
+                message: 'membership is required',
+                field: 'membership'
+            })
+        }
+
+        const usedMembership = await userModel.find({ club: club, membership: membership })
+        if(usedMembership.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'membership is already used',
+                field: 'membership'
             })
         }
 
@@ -98,6 +140,5 @@ const addUser = async (request, response) => {
 }
 
 module.exports = {
-    getUsers,
-    addUser
+    getUsers
 }
