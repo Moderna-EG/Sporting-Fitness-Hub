@@ -5,7 +5,10 @@ const getUsers = async (request, response) => {
 
     try {
 
-        const users = await userModel.find({ role: 'USER' }).select({ __v: 0, updatedAt: 0, password: 0 })
+        const users = await userModel
+        .find({ role: 'USER' })
+        .sort({ createdAt: -1 })
+        .select({ __v: 0, updatedAt: 0, password: 0 })
 
         return response.status(200).json({
             ok: true,
@@ -267,6 +270,7 @@ const getByMembership = async (request, response) => {
 
         const member = await userModel
         .findOne({ club, membership })
+        .sort({ createdAt: -1 })
         .select({ __v: 0, updatedAt: 0, password: 0 })
 
         return response.status(200).json({
@@ -289,6 +293,7 @@ const getMembers = async (request, response) => {
 
         const members = await userModel
         .find({ role: 'MEMBER' })
+        .sort({ createdAt: -1 })
         .select({ password: 0, updatedAt: 0, __v: 0 })
 
         return response.status(200).json({
