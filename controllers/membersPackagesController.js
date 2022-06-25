@@ -15,10 +15,16 @@ const getRegisteredPackages = async (request, response) => {
                 $lookup: { from: 'packages', localField: 'packageId', foreignField: '_id', as: 'package' }
             },
             {
-                $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' }
+                $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'member' }
             },
             {
-                $project: { __v: 0, updatedAt: 0, packageId: 0, userId: 0 }
+                $lookup: { from: 'users', localField: 'registrationUserId', foreignField: '_id', as: 'user' }
+            },
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $project: { __v: 0, updatedAt: 0, packageId: 0 }
             }
         ])
 
@@ -35,6 +41,36 @@ const getRegisteredPackages = async (request, response) => {
         })
     }
 }
+
+const deleteRegisteredPackage = async (request, response) => {
+
+    try {
+
+        const { memberPackageId } = request.params
+
+        if(!isObjectId(memberPackageId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid registered package Id'
+            })
+        }
+
+        await memberPackageModel.findByIdAndDelete(memberPackageId)
+
+        return response.status(200).json({
+            ok: true,
+            message: 'member package deleted successfully'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 
 const getMemberRegisteredPackages = async (request, response) => {
 
@@ -84,7 +120,7 @@ const registerOfflinePackage = async (request, response) => {
         if(usedMemberPackages.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'already registered in a package'
+                message: 'already registered in a'
             })
         }
 
@@ -414,5 +450,6 @@ module.exports = {
     searchMember, 
     getClubMembers, 
     updateMemberAttendance,
-    getMemberRegisteredPackages
+    getMemberRegisteredPackages,
+    deleteRegisteredPackage
  }

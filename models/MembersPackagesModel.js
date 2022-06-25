@@ -2,8 +2,8 @@ const mongoose = require('mongoose')
 const MembersPackagesSchema = new mongoose.Schema({
 
     packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package', required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    registrationUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    userId: { type: mongoose.Schema.ObjectId, ref: 'User', required: true },
+    registrationUserId: { type: mongoose.Schema.ObjectId, ref: 'User' },
     active: { type: Boolean, default: true },
     paid: { type: Boolean, default: false },
     paymentMethod: { type: String, default: 'CASH', enum: ['CASH', 'CARD', 'cash', 'card'] },

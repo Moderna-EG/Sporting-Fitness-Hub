@@ -1,11 +1,12 @@
+const User = require('../../lamadev-ecommerce/ecommerce-api/models/User')
 const userModel = require('../models/UserModel')
-const { isClubValid } = require('../utils/utils')
+const { isClubValid, isObjectId } = require('../utils/utils')
 
 const getUsers = async (request, response) => {
 
     try {
 
-        const users = await userModel.find().select({ __v: 0, updatedAt: 0 })
+        const users = await userModel.find({ role: 'USER' }).select({ __v: 0, updatedAt: 0, password: 0 })
 
         return response.status(200).json({
             ok: true,
@@ -26,7 +27,7 @@ const addUser = async (request, response) => {
 
     try {
 
-        const { username, email, password, phone, role, club, membership } = request.body
+        const { username, email, password, phone } = request.body
 
         if(!username) {
             return response.status(406).json({
@@ -72,62 +73,148 @@ const addUser = async (request, response) => {
                 field: 'phone'
             })
         }
-
-        if(!role) {
-            return response.status(406).json({
-                ok: false,
-                message: 'role is required',
-                field: 'role'
-            })
-        }
-
-        if(!club) {
-            return response.status(406).json({
-                ok: false,
-                message: 'club is required',
-                field: 'club'
-            })
-        }
-
-        if(!isClubValid(club)) {
-            return response.status(406).json({
-                ok: false,
-                message: 'this club is not registered',
-                field: 'membership'
-            })
-        }
-
-        if(!membership) {
-            return response.status(406).json({
-                ok: false,
-                message: 'membership is required',
-                field: 'membership'
-            })
-        }
-
-        const usedMembership = await userModel.find({ club: club, membership: membership })
-        if(usedMembership.length != 0) {
-            return response.status(406).json({
-                ok: false,
-                message: 'membership is already used',
-                field: 'membership'
-            })
-        }
-
         const user = {
             username,
             email,
             password,
-            phone
+            phone,
+            role: 'USER'
         }
 
         const User = new userModel(user)
         const savedUser = await User.save()
 
+        savedUser.password = ''
+        savedUser.updatedAt = ''
+        savedUser.__v = ''
+
         return response.status(200).json({
             ok: true,
             user: savedUser,
             message: 'user added successfully!'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const updateUser = async (request, response) => {
+
+    try {
+
+        const { userId } = request.params
+        const { username, email, password, phone } = request.body
+
+        if(!isObjectId(userId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id'
+            })
+        }
+
+        const userData = await userModel.findById(userId)
+        if(!userData) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id'
+            })
+        }
+
+        if(!username) {
+            return response.status(406).json({
+                ok: false,
+                message: 'username is required'
+            })
+        }
+
+        if(!email) {
+            return response.status(406).json({
+                ok: false,
+                message: 'email is required'
+            })
+        }
+
+        const usedEmails = await userModel.find({ email })
+        if(usedEmails.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'email is already taken'
+            })
+        }
+
+        if(!password) {
+            return response.status(406).json({
+                ok: false,
+                message: 'password is required'
+            })
+        }
+
+        if(!phone) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone is required'
+            })
+        }
+
+        const usedPhones = await userModel.find({ phone })
+        if(usedPhones.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone is already taken'
+            })
+        }
+
+        const newUserData = {
+            username,
+            email,
+            phone,
+            password
+        }
+
+        const updatedUser = await userModel.findByIdAndUpdate(userId, newUserData, { new: true })
+
+        updatedUser.password = ''
+        updatedUser.updatedAt = ''
+        updatedUser.__v = ''
+
+        return response.status(200).json({
+            ok: true,
+            updatedUser
+        })
+
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const deleteUser = async (request, response) => {
+
+    try {
+
+        const { userId } = request.params
+
+        if(!isObjectId(userId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id'
+            })
+        }
+
+        await userModel.findByIdAndDelete(userId)
+
+        return response.status(200).json({
+            ok: true,
+            message: 'user deleted successfully'
         })
 
     } catch(error) {
@@ -187,8 +274,64 @@ const getByMembership = async (request, response) => {
     }
 }
 
+const getMembers = async (request, response) => {
+
+    try {
+
+        const members = await userModel
+        .find({ role: 'MEMBER' })
+        .select({ password: 0, updatedAt: 0, __v: 0 })
+
+        return response.status(200).json({
+            ok: true,
+            members
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const deleteMember = async (request, response) => {
+
+    try {
+
+        const { memberId } = request.params
+
+        if(!isObjectId(memberId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member Id'
+            })
+        }
+
+        await userModel.findByIdAndDelete(memberId)
+
+        return response.status(200).json({
+            ok: true,
+            message: 'member deleted successfully'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 module.exports = {
     getUsers,
     getClubMembers,
-    getByMembership
+    getByMembership,
+    updateUser,
+    deleteUser,
+    addUser,
+    getMembers,
+    deleteMember
 }
