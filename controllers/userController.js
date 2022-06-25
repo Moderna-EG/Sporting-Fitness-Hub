@@ -58,6 +58,7 @@ const addUser = async (request, response) => {
                 field: 'password'
             })
         }
+
         if(!phone) {
             return response.status(406).json({
                 ok: false,
@@ -65,6 +66,15 @@ const addUser = async (request, response) => {
                 field: 'phone'
             })
         }
+
+        if(phone.length != 11) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone number must be 11 numbers',
+                field: 'phone'
+            })
+        }
+
         const usedPhone = await userModel.find({ phone: phone })
         if(usedPhone.length != 0) {
             return response.status(406).json({
