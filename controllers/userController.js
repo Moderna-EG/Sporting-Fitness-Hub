@@ -160,6 +160,13 @@ const updateUser = async (request, response) => {
             })
         }
 
+        if(phone.length != 11) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone must be 11 numbers'
+            })
+        }
+
         const usedPhones = await userModel.find({ phone })
         if(usedPhones.length != 0) {
             return response.status(406).json({
