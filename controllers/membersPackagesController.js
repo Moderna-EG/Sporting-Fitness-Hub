@@ -120,7 +120,7 @@ const registerOfflinePackage = async (request, response) => {
         if(usedMemberPackages.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'already registered in a'
+                message: 'already registered in a package'
             })
         }
 

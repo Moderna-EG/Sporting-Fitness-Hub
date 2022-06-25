@@ -107,7 +107,7 @@ const updateUser = async (request, response) => {
     try {
 
         const { userId } = request.params
-        const { username, email, password, phone } = request.body
+        const { username, email, phone } = request.body
 
         if(!isObjectId(userId)) {
             return response.status(406).json({
@@ -146,13 +146,6 @@ const updateUser = async (request, response) => {
             })
         }
 
-        if(!password) {
-            return response.status(406).json({
-                ok: false,
-                message: 'password is required'
-            })
-        }
-
         if(!phone) {
             return response.status(406).json({
                 ok: false,
@@ -179,7 +172,6 @@ const updateUser = async (request, response) => {
             username,
             email,
             phone,
-            password
         }
 
         const updatedUser = await userModel.findByIdAndUpdate(userId, newUserData, { new: true })
