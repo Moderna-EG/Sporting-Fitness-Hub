@@ -46,7 +46,8 @@ const addUser = async (request, response) => {
         if(usedEmail.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'email is already used'
+                message: 'email is already used',
+                field: 'email'
             })
         }
 
