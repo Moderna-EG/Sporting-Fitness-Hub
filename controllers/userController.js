@@ -1,4 +1,3 @@
-const User = require('../../lamadev-ecommerce/ecommerce-api/models/User')
 const userModel = require('../models/UserModel')
 const { isClubValid, isObjectId } = require('../utils/utils')
 
