@@ -434,14 +434,16 @@ const adminLogin = async (request, response) => {
         if(!request.body.email) {
             return response.status(406).json({
                 ok: false,
-                message: 'email is required'
+                message: 'email is required',
+                field: 'email'
             })
         }
 
         if(!request.body.password) {
             return response.status(406).json({
                 ok: false,
-                message: 'password is required'
+                message: 'password is required',
+                field: 'password'
             })
         }
 
@@ -450,14 +452,16 @@ const adminLogin = async (request, response) => {
         if(member.length == 0) {
             return response.status(406).json({
                 ok: false,
-                message: `email doesn't exist`
+                message: `email doesn't exist`,
+                field: 'email'
             })
         }
 
         if(member[0].password != request.body.password) {
             return response.status(406).json({
                 ok: false,
-                message: 'wrong password'
+                message: 'wrong password',
+                field: 'password'
             })
         }
 
