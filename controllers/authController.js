@@ -520,7 +520,8 @@ const resetEmail = async (request, response) => {
 
         return response.status(200).json({
             ok: true,
-            message: 'mail sent successfully'
+            message: 'mail sent successfully',
+            userId: usedEmails[0]._id
         })
 
     } catch(error) {
