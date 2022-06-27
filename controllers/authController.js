@@ -1,9 +1,8 @@
 const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
 const config = require('../config/config')
-const { isClubValid } = require('../utils/utils')
-const { response } = require('express')
-
+const { isClubValid, isObjectId } = require('../utils/utils')
+const { sendResetMail } = require('../mails/resetMail')
 
 const userLogin = async (request, response) => {
 
@@ -487,4 +486,90 @@ const adminLogin = async (request, response) => {
     }
 }
 
-module.exports = { userLogin, userSignUp, memberLogin, memberSignUp, adminSignUp, adminLogin }
+const resetEmail = async (request, response) => {
+
+    try {
+
+        const { email } = request.params
+
+        if(!email) {
+            return response.status(406).json({
+                ok: false,
+                message: 'email is required',
+                field: 'email'
+            })
+        }
+
+        const usedEmails = await userModel.find({ email })
+        if(usedEmails.length == 0) {
+            return response.status(406).json({
+                ok: false,
+                message: `account doesn't exist`,
+                field: 'email'
+            })
+        }
+
+        const isSent = await sendResetMail(email, usedEmails[0].username, usedEmails[0]._id)
+
+        if(!isSent) {
+            return response.status(406).json({
+                ok: false,
+                message: `couldn't send the email`
+            })
+        }
+
+        return response.status(200).json({
+            ok: true,
+            message: 'mail sent successfully'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const resetPassword = async (request, response) => {
+
+    try {
+
+        const { userId } = request.params
+        const { newPassword } = request.body
+
+        if(!isObjectId(userId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid user Id',
+                field: 'userId'
+            })
+        }
+
+        if(!newPassword) {
+            return response.status(406).json({
+                ok: false,
+                message: 'new password is required',
+                field: 'new password'
+            })
+        }
+
+        await userModel.findByIdAndUpdate(userId, { password: newPassword })
+        
+
+        return response.status(200).json({
+            ok: true,
+            message: 'password reset successfully'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+module.exports = { userLogin, userSignUp, memberLogin, memberSignUp, adminSignUp, adminLogin, resetEmail, resetPassword }

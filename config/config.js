@@ -4,5 +4,6 @@ module.exports = {
     SECRETKEY: process.env.SECRETKEY,
     ALLOWED_CLUBS: ['sporting', 'jazeera', 'saed'],
     REGISTRATION_METHOD: ['online', 'offline'],
-    PAYMENT_METHOD: ['cash', 'card']
+    PAYMENT_METHOD: ['cash', 'card'],
+    HOST_URL: 'http://localhost:3000'
 }

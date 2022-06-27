@@ -13,4 +13,8 @@ router.post('/auth/admins/login', (request, response) => authController.adminLog
 
 router.post('/auth/admins/sign-up', (request, response) => authController.adminSignUp(request, response))
 
+router.post('/auth/reset-mail/:email', (request, response) => authController.resetEmail(request, response))
+
+router.put('/auth/reset-password/:userId', (request, response) => authController.resetPassword(request, response))
+
 module.exports = router
