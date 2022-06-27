@@ -1,5 +1,6 @@
 const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
+const CryptoJS = require('crypto-js')
 const config = require('../config/config')
 const { isClubValid, isObjectId } = require('../utils/utils')
 const { sendResetMail } = require('../mails/resetMail')
@@ -32,10 +33,18 @@ const userLogin = async (request, response) => {
             })
         }
 
-        if(user[0].password != request.body.password) {
+        const hashedPassword = CryptoJS.AES.decrypt(
+            user[0].password,
+            config.SECRETKEY
+        )
+
+        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
+
+        if(OriginalPassword !== request.body.password) {
             return response.status(406).json({
                 ok: false,
-                message: 'wrong password'
+                message: 'wrong password',
+                field: 'password'
             })
         }
 
@@ -98,6 +107,7 @@ const userSignUp = async (request, response) => {
                 field: 'password'
             })
         }
+
         if(!phone) {
             return response.status(406).json({
                 ok: false,
@@ -105,6 +115,14 @@ const userSignUp = async (request, response) => {
                 field: 'phone'
             })
         }
+
+        if(phone.length != 11) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone must be 11 numbers'
+            })
+        }
+
         const usedPhone = await userModel.find({ phone: phone })
         if(usedPhone.length != 0) {
             return response.status(406).json({
@@ -117,7 +135,7 @@ const userSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password,
+            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
             phone,
             role: 'USER'
         }
@@ -178,10 +196,18 @@ const memberLogin = async (request, response) => {
             })
         }
 
-        if(member[0].password != request.body.password) {
+        const hashedPassword = CryptoJS.AES.decrypt(
+            member[0].password,
+            config.SECRETKEY
+        )
+
+        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
+
+        if(OriginalPassword !== request.body.password) {
             return response.status(406).json({
                 ok: false,
-                message: 'wrong password'
+                message: 'wrong password',
+                field: 'password'
             })
         }
 
@@ -302,7 +328,7 @@ const memberSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password,
+            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
             phone,
             role: 'MEMBER',
             club,
@@ -380,6 +406,15 @@ const adminSignUp = async (request, response) => {
                 field: 'phone'
             })
         }
+
+        if(phone.length != 11) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone must be 11 numbers'
+            })
+        }
+
+        
         const usedPhone = await userModel.find({ phone: phone })
         if(usedPhone.length != 0) {
             return response.status(406).json({
@@ -392,7 +427,7 @@ const adminSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password,
+            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
             phone,
             role: 'ADMIN'
         }
@@ -446,9 +481,9 @@ const adminLogin = async (request, response) => {
             })
         }
 
-        const member = await userModel.find({ email: request.body.email, role: 'ADMIN' }).select({ __v: 0, updatedAt: 0 })
+        const admin = await userModel.find({ email: request.body.email, role: 'ADMIN' }).select({ __v: 0, updatedAt: 0 })
 
-        if(member.length == 0) {
+        if(admin.length == 0) {
             return response.status(406).json({
                 ok: false,
                 message: `email doesn't exist`,
@@ -456,7 +491,14 @@ const adminLogin = async (request, response) => {
             })
         }
 
-        if(member[0].password != request.body.password) {
+        const hashedPassword = CryptoJS.AES.decrypt(
+            admin[0].password,
+            config.SECRETKEY
+        )
+
+        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
+
+        if(OriginalPassword !== request.body.password) {
             return response.status(406).json({
                 ok: false,
                 message: 'wrong password',
@@ -465,12 +507,12 @@ const adminLogin = async (request, response) => {
         }
 
         const accessToken = userJWT.sign(
-            { user: member[0] },
+            { user: admin[0] },
             config.SECRETKEY,
             { expiresIn: '30d' }
             )
 
-            member[0].password = ''
+            admin[0].password = ''
 
         return response.status(200).json({
             ok: true,

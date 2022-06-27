@@ -7,13 +7,13 @@ const sendResetMail = async (receiverMail, receiverName, receiverId) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: 'sportingfitnesshub@gmail.com',
-          pass: 'chagbxrextwrhbzb'
+          user: config.USER_MAIL,
+          pass: config.MAIL_PASSWORD
         }
       })
 
       var mailOptions = {
-        from: 'sportingfitnesshub@gmail.com',
+        from: config.USER_MAIL,
         to: receiverMail,
         subject: 'Password Reset',
         html: `

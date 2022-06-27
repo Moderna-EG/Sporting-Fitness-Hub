@@ -5,5 +5,7 @@ module.exports = {
     ALLOWED_CLUBS: ['sporting', 'jazeera', 'saed'],
     REGISTRATION_METHOD: ['online', 'offline'],
     PAYMENT_METHOD: ['cash', 'card'],
-    HOST_URL: 'http://localhost:3000'
+    HOST_URL: 'http://localhost:3000',
+    USER_MAIL: process.env.USER_MAIL,
+    MAIL_PASSWORD: process.env.MAIL_PASSWORD
 }
