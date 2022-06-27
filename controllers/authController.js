@@ -516,7 +516,7 @@ const adminLogin = async (request, response) => {
 
         return response.status(200).json({
             ok: true,
-            user: member[0],
+            user: admin[0],
             accessToken: accessToken
         })
     } catch(error) {
