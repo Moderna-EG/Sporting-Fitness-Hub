@@ -598,7 +598,7 @@ const resetPassword = async (request, response) => {
             })
         }
 
-        await userModel.findByIdAndUpdate(userId, { password: newPassword })
+        await userModel.findByIdAndUpdate(userId, { password: CryptoJS.AES.encrypt(newPassword, config.SECRETKEY).toString() })
         
 
         return response.status(200).json({
