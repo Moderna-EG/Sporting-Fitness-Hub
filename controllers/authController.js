@@ -9,7 +9,6 @@ const userLogin = async (request, response) => {
 
     try {
 
-
         if(!request.body.email) {
             return response.status(406).json({
                 ok: false,
@@ -113,7 +112,7 @@ const userSignUp = async (request, response) => {
         if(phone.length != 11) {
             return response.status(406).json({
                 ok: false,
-                message: 'phone must be 11 numbers'
+                message: 'phone must be 11 numbers' 
             })
         }
 

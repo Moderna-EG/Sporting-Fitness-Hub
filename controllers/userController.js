@@ -1,5 +1,7 @@
 const userModel = require('../models/UserModel')
 const { isClubValid, isObjectId } = require('../utils/utils')
+const bcrypt = require('bcrypt')
+const config = require('../config/config')
 
 const getUsers = async (request, response) => {
 
@@ -89,7 +91,7 @@ const addUser = async (request, response) => {
         const user = {
             username,
             email,
-            password,
+            password: bcrypt.hashSync(password, config.BCRYPT_ROUNDS),
             phone,
             role: 'USER'
         }
