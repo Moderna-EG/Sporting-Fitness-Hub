@@ -1,6 +1,6 @@
 const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
-const CryptoJS = require('crypto-js')
+const bcrypt = require('bcrypt')
 const config = require('../config/config')
 const { isClubValid, isObjectId } = require('../utils/utils')
 const { sendResetMail } = require('../mails/resetMail')
@@ -33,14 +33,8 @@ const userLogin = async (request, response) => {
             })
         }
 
-        const hashedPassword = CryptoJS.AES.decrypt(
-            user[0].password,
-            config.SECRETKEY
-        )
 
-        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
-
-        if(OriginalPassword !== request.body.password) {
+        if(!bcrypt.compareSync(request.body.password, user[0].password)) {
             return response.status(406).json({
                 ok: false,
                 message: 'wrong password',
@@ -76,7 +70,7 @@ const userSignUp = async (request, response) => {
 
     try {
 
-        const { username, email, password, phone, club, membership } = request.body
+        const { username, email, password, phone } = request.body
 
         if(!username) {
             return response.status(406).json({
@@ -135,7 +129,7 @@ const userSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
+            password: bcrypt.hashSync(password, config.BCRYPT_ROUNDS),
             phone,
             role: 'USER'
         }
@@ -196,14 +190,8 @@ const memberLogin = async (request, response) => {
             })
         }
 
-        const hashedPassword = CryptoJS.AES.decrypt(
-            member[0].password,
-            config.SECRETKEY
-        )
 
-        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
-
-        if(OriginalPassword !== request.body.password) {
+        if(!bcrypt.compareSync(request.body.password, member[0].password)) {
             return response.status(406).json({
                 ok: false,
                 message: 'wrong password',
@@ -328,7 +316,7 @@ const memberSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
+            password: bcrypt.hashSync(password, config.BCRYPT_ROUNDS),
             phone,
             role: 'MEMBER',
             club,
@@ -427,7 +415,7 @@ const adminSignUp = async (request, response) => {
         const user = {
             username,
             email,
-            password: CryptoJS.AES.encrypt(password, config.SECRETKEY).toString(),
+            password: bcrypt.hashSync(password, config.BCRYPT_ROUNDS),
             phone,
             role: 'ADMIN'
         }
@@ -491,14 +479,8 @@ const adminLogin = async (request, response) => {
             })
         }
 
-        const hashedPassword = CryptoJS.AES.decrypt(
-            admin[0].password,
-            config.SECRETKEY
-        )
 
-        const OriginalPassword = hashedPassword.toString(CryptoJS.enc.Utf8)
-
-        if(OriginalPassword !== request.body.password) {
+        if(!bcrypt.compareSync(request.body.password, admin[0].password)) {
             return response.status(406).json({
                 ok: false,
                 message: 'wrong password',
@@ -598,7 +580,7 @@ const resetPassword = async (request, response) => {
             })
         }
 
-        await userModel.findByIdAndUpdate(userId, { password: CryptoJS.AES.encrypt(newPassword, config.SECRETKEY).toString() })
+        await userModel.findByIdAndUpdate(userId, { password: bcrypt.hashSync(newPassword, config.BCRYPT_ROUNDS) })
         
 
         return response.status(200).json({

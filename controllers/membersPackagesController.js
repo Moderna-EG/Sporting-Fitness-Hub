@@ -5,6 +5,7 @@ const memberPackageModel = require('../models/MembersPackagesModel')
 const { isObjectId, isClubValid, isRegistrationMethodValid, isPaymentMethodValid } = require('../utils/utils')
 const UserModel = require('../models/UserModel')
 const mongoose = require('mongoose')
+const payment = require('../payment/x-pay')
 
 const getRegisteredPackages = async (request, response) => {
 
@@ -303,11 +304,33 @@ const registerOnlinePackage = async (request, response) => {
         }
 
         let paid = false
-        if(paymentMethod == 'cash') {
+        if(paymentMethod == 'card') {
+
+            const PAYMENT_AMOUNT = package.price
+            const userData = {
+                username: user[0].username,
+                email: user[0].email,
+                phone: user[0].phone
+            }
+
+            const transaction = await payment.createPayment(userData, PAYMENT_AMOUNT)
+
+            if(!transaction) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'failed to process your transaction'
+                })
+            }
+
+            memberPackage = { ...memberPackage, transaction }
+
             paid = true
+            
+        } else {
+            paid = false
         }
 
-        memberPackage = { packageId, userId, registrationMethod: 'online', paymentMethod,  paid }
+        memberPackage = { ...memberPackage, packageId, userId, registrationMethod: 'online', paymentMethod,  paid }
 
         const registerPackage = new memberPackageModel(memberPackage)
         const savedPackageDetails = await registerPackage.save()
@@ -316,6 +339,52 @@ const registerOnlinePackage = async (request, response) => {
             ok: true,
             registeredPackage: savedPackageDetails,
             message: 'registered package successfully'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const updateMemberPaid = async (request, response) => {
+
+    try {
+
+        const { memberPackageId } = request.params
+
+        if(!isObjectId(memberPackageId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member package Id'
+            })
+        }
+
+        const checkMemberPackage = await memberPackageModel.findById({ _id: memberPackageId })
+
+        if(!checkMemberPackage) {
+            return response.status(406).json({
+                ok: false,
+                message: 'no registered package with that Id'
+            })
+        }
+
+        if(checkMemberPackage.paid) {
+            return response.status(406).json({
+                ok: false,
+                message: 'member already paid for this package'
+            })
+        }
+
+        const memberPackage = await memberPackageModel
+        .findByIdAndUpdate(memberPackageId, { paid:  true }, { new: true })
+
+        return response.status(200).json({
+            ok: true,
+            memberPackage
         })
 
     } catch(error) {
@@ -451,5 +520,6 @@ module.exports = {
     getClubMembers, 
     updateMemberAttendance,
     getMemberRegisteredPackages,
-    deleteRegisteredPackage
+    deleteRegisteredPackage,
+    updateMemberPaid
  }

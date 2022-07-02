@@ -18,5 +18,7 @@ router.get('/members-packages/members/:memberId', (request, response) => members
 
 router.delete('/members-packages/:memberPackageId', (request, response) => membersPackagesController.deleteRegisteredPackage(request,  response))
 
+router.put('/members-packages/:memberPackageId/paid', (request, response) => membersPackagesController.updateMemberPaid(request, response))
+
 module.exports = router
 
