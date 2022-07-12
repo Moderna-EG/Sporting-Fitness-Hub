@@ -2,7 +2,7 @@ const config = require('../config/config')
 const packageModel = require('../models/PackageModel')
 const userModel = require('../models/UserModel')
 const memberPackageModel = require('../models/MembersPackagesModel')
-const { isObjectId, isClubValid, isRegistrationMethodValid, isPaymentMethodValid } = require('../utils/utils')
+const { isObjectId, isClubValid, isRegistrationMethodValid, isPaymentMethodValid, isUUIDValid } = require('../utils/utils')
 const UserModel = require('../models/UserModel')
 const mongoose = require('mongoose')
 const payment = require('../payment/x-pay')
@@ -350,6 +350,84 @@ const registerOnlinePackage = async (request, response) => {
     }
 }
 
+const payOnline = async (request, response) => {
+
+    try {
+
+        const { memberId } = request.params
+        const { paymentAmount } = request.body
+
+        if(!isObjectId(memberId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member Id'
+            })
+        }
+
+        const member = await userModel.findById(memberId)
+
+        if(!member) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member Id'
+            })
+        }
+
+        if(!paymentAmount) {
+            return response.status(406).json({
+                ok: false,
+                message: 'payment amount is required',
+                field: 'paymentAmount'
+            })
+        }
+
+        const memberData = { 
+            username: member.username,
+            email: member.email,
+            phone: member.phone
+        }
+
+        const transaction = await payment.createPayment(memberData, paymentAmount)
+
+        return response.status(200).json(transaction.data)
+
+    } catch(error) {
+        console.error(error.response.data)
+        return response.status(500).json({
+            ok: false,
+            message: 'error processing the payment'
+        })
+    }
+}
+
+const checkTransaction = async (request, response) => {
+
+    try {
+
+        const { transactionUUID } = request.params
+
+        if(!isUUIDValid(transactionUUID)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid transaction UUID'
+            })
+        }
+
+
+        return response.status(200).json({
+            ok: true,
+            message: 'done'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 const updateMemberPaid = async (request, response) => {
 
     try {
@@ -521,5 +599,7 @@ module.exports = {
     updateMemberAttendance,
     getMemberRegisteredPackages,
     deleteRegisteredPackage,
-    updateMemberPaid
+    updateMemberPaid,
+    payOnline,
+    checkTransaction
  }

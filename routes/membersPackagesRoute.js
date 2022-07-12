@@ -20,5 +20,9 @@ router.delete('/members-packages/:memberPackageId', (request, response) => membe
 
 router.put('/members-packages/:memberPackageId/paid', (request, response) => membersPackagesController.updateMemberPaid(request, response))
 
+router.post('/members-packages/:memberId/payment/pay-online', (request, response) => membersPackagesController.payOnline(request, response))
+
+router.get('/members-packages/payment/:transactionUUID', (request, response) => membersPackagesController.checkTransaction(request, response))
+
 module.exports = router
 

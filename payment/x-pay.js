@@ -2,8 +2,6 @@ const config = require('../config/config')
 const { paymentRequest } = require('../api/payment-api')
 const createPayment = async (userData, paymentAmount) => {
 
-    try {
-
         const billingData = {
             billing_data: {
                 name: userData.username,
@@ -20,18 +18,7 @@ const createPayment = async (userData, paymentAmount) => {
 
         const response = await paymentRequest.post('/payments/pay/variable-amount', billingData)
 
-        const transaction = {
-            transactionId: response.data.data.transaction_id,
-            transactionStatus: response.data.data.transaction_status,
-            transactionUUID: response.data.data.transaction_uuid,
-            transactionAmount: paymentAmount
-        }
-
-        return transaction
-
-    } catch(error) {
-        console.error(error.response.data.status.errors[0])
-    }
+        return response.data
 }
 
 
