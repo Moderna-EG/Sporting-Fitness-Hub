@@ -17,4 +17,10 @@ router.post('/auth/reset-mail/:email', (request, response) => authController.res
 
 router.put('/auth/reset-password/:userId', (request, response) => authController.resetPassword(request, response))
 
+router.get('/auth/check-email/:email', (request, response) => authController.checkEmail(request, response))
+
+router.get('/auth/check-phone/:phone', (request, response) => authController.checkPhone(request, response))
+
+router.get('/auth/check-username/:username', (request, response) => authController.checkUsername(request, response))
+
 module.exports = router

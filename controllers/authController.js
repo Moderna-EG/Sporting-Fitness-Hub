@@ -2,7 +2,7 @@ const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const config = require('../config/config')
-const { isClubValid, isObjectId } = require('../utils/utils')
+const { isClubValid, isObjectId, isUsernameValid, isPhoneValid } = require('../utils/utils')
 const { sendResetMail } = require('../mails/resetMail')
 
 const userLogin = async (request, response) => {
@@ -596,4 +596,132 @@ const resetPassword = async (request, response) => {
     }
 }
 
-module.exports = { userLogin, userSignUp, memberLogin, memberSignUp, adminSignUp, adminLogin, resetEmail, resetPassword }
+const checkEmail = async (request, response) => {
+
+    try {
+
+        const { email } = request.params
+
+        const usedEmails = await userModel.find({ email })
+
+        if(usedEmails.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'Email is already used'
+            })
+        }
+
+        return response.status(200).json({
+            ok: true,
+            message: 'Valid email'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const checkPhone = async (request, response) => {
+
+    try {
+
+        const { phone } = request.params
+
+        if(!isPhoneValid(phone)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid phone number'
+            })
+        }
+
+        if(phone.length != 11) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid phone number 11 digits required'
+            })
+        }
+
+        const usedPhones = await userModel.find({ phone })
+
+        if(usedPhones.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'Phone is already used'
+            })
+        }
+
+        return response.status(200).json({
+            ok: true,
+            message: 'Valid Phone'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+const checkUsername = async (request, response) => {
+
+    try {
+
+        const { username } = request.params
+
+        if(!username.includes(' ')) {
+            return response.status(406).json({
+                ok: true,
+                message: 'username must be two words'
+            })
+        }
+
+        const splitName = username.split(' ')
+
+        if(splitName.length != 2) {
+            return response.status(406).json({
+                ok: true,
+                message: 'username must be two words'
+            })
+        }
+
+        if(!isUsernameValid(username)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid characters in the name'
+            })
+        }
+
+        return response.status(200).json({
+            ok: true,
+            message: 'valid username'
+        })
+
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
+module.exports = { 
+    userLogin,
+    userSignUp, 
+    memberLogin, 
+    memberSignUp, 
+    adminSignUp, 
+    adminLogin, 
+    resetEmail, 
+    resetPassword,
+    checkEmail,
+    checkPhone,
+    checkUsername
+}
