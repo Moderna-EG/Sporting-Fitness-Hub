@@ -2,7 +2,7 @@ const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const config = require('../config/config')
-const { isClubValid, isObjectId, isUsernameValid, isPhoneValid } = require('../utils/utils')
+const { isClubValid, isObjectId, isUsernameValid, isPhoneValid, isEmailValid } = require('../utils/utils')
 const { sendResetMail } = require('../mails/resetMail')
 
 const userLogin = async (request, response) => {
@@ -601,6 +601,13 @@ const checkEmail = async (request, response) => {
     try {
 
         const { email } = request.params
+
+        if(!isEmailValid(email)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid email formate'
+            })
+        }
 
         const usedEmails = await userModel.find({ email })
 

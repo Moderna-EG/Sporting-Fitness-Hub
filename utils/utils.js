@@ -5,6 +5,7 @@ const { isPaymentMethodValid } = require('./validatePaymentMethod')
 const { isUUIDValid } = require('./validateUUID')
 const { isPhoneValid } = require('./validatePhone')
 const { isUsernameValid } = require('./validateUsername')
+const { isEmailValid } = require('./validateEmail')
 
 module.exports = { 
     isObjectId, 
@@ -13,5 +14,6 @@ module.exports = {
     isPaymentMethodValid, 
     isUUIDValid,
     isPhoneValid,
-    isUsernameValid
+    isUsernameValid,
+    isEmailValid
 }
