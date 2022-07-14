@@ -683,7 +683,7 @@ const checkUsername = async (request, response) => {
 
         if(!username.includes(' ')) {
             return response.status(406).json({
-                ok: true,
+                ok: false,
                 message: 'username must be two words'
             })
         }
@@ -692,7 +692,7 @@ const checkUsername = async (request, response) => {
 
         if(splitName.length != 2) {
             return response.status(406).json({
-                ok: true,
+                ok: false,
                 message: 'username must be two words'
             })
         }
