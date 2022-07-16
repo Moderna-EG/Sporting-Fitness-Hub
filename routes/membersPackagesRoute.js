@@ -24,5 +24,7 @@ router.post('/members-packages/:memberId/payment/pay-online', (request, response
 
 router.get('/members-packages/payment/:transactionUUID', (request, response) => membersPackagesController.checkTransaction(request, response))
 
+router.get('/members-packages/members/:memberId/check-registeration', (request, response) => membersPackagesController.checkMemberRegistration(request, response))
+
 module.exports = router
 

@@ -6,6 +6,7 @@ const { isUUIDValid } = require('./validateUUID')
 const { isPhoneValid } = require('./validatePhone')
 const { isUsernameValid } = require('./validateUsername')
 const { isEmailValid } = require('./validateEmail')
+const { isMembershipValid } = require('./validateMembership')
 
 module.exports = { 
     isObjectId, 
@@ -15,5 +16,6 @@ module.exports = {
     isUUIDValid,
     isPhoneValid,
     isUsernameValid,
-    isEmailValid
+    isEmailValid,
+    isMembershipValid
 }

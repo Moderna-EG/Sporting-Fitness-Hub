@@ -23,4 +23,6 @@ router.get('/auth/check-phone/:phone', (request, response) => authController.che
 
 router.get('/auth/check-username/:username', (request, response) => authController.checkUsername(request, response))
 
+router.get('/auth/check-membership/clubs/:club/memberships/:membership', (request, response) => authController.checkMembership(request, response))
+
 module.exports = router

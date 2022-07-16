@@ -2,7 +2,7 @@ const userModel = require('../models/UserModel')
 const userJWT = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const config = require('../config/config')
-const { isClubValid, isObjectId, isUsernameValid, isPhoneValid, isEmailValid } = require('../utils/utils')
+const { isClubValid, isObjectId, isUsernameValid, isPhoneValid, isEmailValid, isMembershipValid } = require('../utils/utils')
 const { sendResetMail } = require('../mails/resetMail')
 
 const userLogin = async (request, response) => {
@@ -719,6 +719,49 @@ const checkUsername = async (request, response) => {
     }
 }
 
+const checkMembership = async (request, response) => {
+
+    try {
+
+        const { club, membership } = request.params
+
+        if(!isClubValid(club)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid club'
+            })
+        }
+
+        if(!isMembershipValid(membership)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'membership must contain numbers only'
+            })
+        }
+
+        const member = await userModel.find({ club, membership })
+
+        if(member.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'membership is already registered'
+            })
+        }
+
+        return response.status(200).json({
+            ok: true,
+            message: 'valid membership'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 module.exports = { 
     userLogin,
     userSignUp, 
@@ -730,5 +773,6 @@ module.exports = {
     resetPassword,
     checkEmail,
     checkPhone,
-    checkUsername
+    checkUsername,
+    checkMembership
 }

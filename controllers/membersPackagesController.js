@@ -86,13 +86,11 @@ const getMemberRegisteredPackages = async (request, response) => {
             })
         }
 
-        console.log(memberId)
-
         const memberPackages = await memberPackageModel
         .aggregate([
             { $match: { userId: mongoose.Types.ObjectId(memberId) }},
             { $lookup: { from: 'packages', localField: 'packageId', foreignField: '_id', as: 'package' }},
-            { $sort: { active: 1 }},
+            { $sort: { active: -1 }},
             { $project: { __v: 0, updatedAt: 0, packageId: 0 }}
         ])
 
@@ -554,6 +552,13 @@ const updateMemberAttendance = async (request, response) => {
 
         const memberPackage = memberRegisteredPackage[0]
 
+        if(memberPackage.paid == false) {
+            return response.status(406).json({
+                ok: false,
+                message: 'this package is not paid, cannot update attendance'
+            })
+        }
+
         const packageData = await packageModel.find({ _id: memberPackage.packageId })
 
         const package = packageData[0]
@@ -590,6 +595,43 @@ const updateMemberAttendance = async (request, response) => {
     }
 }
 
+const checkMemberRegistration = async (request, response) => {
+
+    try {
+
+        const { memberId } = request.params
+
+        if(!isObjectId(memberId)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid member Id'
+            })
+        }
+
+        const memberPackage = await memberPackageModel.find({ userId: memberId, active: true })
+
+        if(memberPackage.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'member already registered in a package'
+            })
+        }
+
+
+        return response.status(200).json({
+            ok: true,
+            message: 'member is not registered in a package'
+        })
+
+    } catch(error) {
+        console.error(error)
+        return response.status(500).json({
+            ok: false,
+            message: 'internal server error'
+        })
+    }
+}
+
 module.exports = {
     getRegisteredPackages,
     registerOfflinePackage, 
@@ -601,5 +643,6 @@ module.exports = {
     deleteRegisteredPackage,
     updateMemberPaid,
     payOnline,
-    checkTransaction
+    checkTransaction,
+    checkMemberRegistration
  }
