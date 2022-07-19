@@ -304,23 +304,65 @@ const registerOnlinePackage = async (request, response) => {
         let paid = false
         if(paymentMethod == 'card') {
 
-            const PAYMENT_AMOUNT = package.price
-            const userData = {
-                username: user[0].username,
-                email: user[0].email,
-                phone: user[0].phone
-            }
+            const { transactionUUID, transactionAmount } = request.body
 
-            const transaction = await payment.createPayment(userData, PAYMENT_AMOUNT)
-
-            if(!transaction) {
+            if(!transactionUUID) {
                 return response.status(406).json({
                     ok: false,
-                    message: 'failed to process your transaction'
+                    message: 'transaction UUID is required'
                 })
             }
 
-            memberPackage = { ...memberPackage, transaction }
+            if(!isUUIDValid(transactionUUID)) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'invalid transaction UUID'
+                })
+            }
+
+            const usedTransactionUUID = await memberPackageModel
+            .find({ transactionUUID })
+
+            if(usedTransactionUUID.length != 0) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction UUID is already used'
+                })
+            }
+
+            if(!Number.isInteger(transactionAmount)) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction amount is required to be a number'
+                })
+            }
+
+            const transaction = await payment.checkPayment(transactionUUID)
+
+            if(!transaction.isAccepted) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'invalid payment'       
+                })
+            }
+
+            const PAYMENT_STATUS = transaction.data.data.status
+
+            if(PAYMENT_STATUS == 'PENDING') {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction is in pending state'
+                })
+            }
+
+            if(PAYMENT_STATUS != 'SUCCESSFUL') {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction is not completed'
+                })
+            }
+
+            memberPackage = { ...memberPackage, transactionUUID, transactionAmount }
 
             paid = true
             
@@ -387,13 +429,28 @@ const payOnline = async (request, response) => {
 
         const transaction = await payment.createPayment(memberData, paymentAmount)
 
-        return response.status(200).json(transaction.data)
+        if(!transaction.isAccepted) {
+            return response.status(406).json({
+                ok: false,
+                message: 'error processing the payment',
+                error: transaction.error
+            })
+        }
+
+        const updatePackagePaymentStatus = await memberPackageModel
+        .findOneAndUpdate({ userId: memberId }, { transactionUUID: transaction.data.data.transaction_uuid })
+
+        return response.status(200).json({
+            ok: true,
+            transaction: transaction.data.data
+        })
 
     } catch(error) {
         console.error(error.response.data)
         return response.status(500).json({
             ok: false,
-            message: 'error processing the payment'
+            message: 'internal server error',
+            error: error.response.data
         })
     }
 }
@@ -411,17 +468,43 @@ const checkTransaction = async (request, response) => {
             })
         }
 
+        const transaction = await payment.checkPayment(transactionUUID)
 
+        if(!transaction.isAccepted) {
+            return response.status(406).json({
+                ok: false,
+                message: transaction.error.status.errors[0].detail
+            })
+        }
+
+        const PAYMENT_STATUS = transaction.data.data.status
+
+        if(PAYMENT_STATUS == 'PENDING') {
+            return response.status(406).json({
+                ok: false,
+                message: 'your payment is in pending state'
+            })
+        }
+
+        if(PAYMENT_STATUS != 'SUCCESSFUL') {
+            return response.status(406).json({
+                ok: false,
+                message: 'your payment is not successful'
+            })
+        }
+        
         return response.status(200).json({
             ok: true,
-            message: 'done'
+            message: 'payment is successful',
+            transaction: transaction.data.data
         })
 
     } catch(error) {
-        console.error(error)
+        console.error(error.response.data)
         return response.status(500).json({
             ok: false,
-            message: 'internal server error'
+            message: 'internal server error',
+            error: error.response.data
         })
     }
 }

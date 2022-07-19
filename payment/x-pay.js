@@ -1,6 +1,10 @@
 const config = require('../config/config')
 const { paymentRequest } = require('../api/payment-api')
+
+
 const createPayment = async (userData, paymentAmount) => {
+
+    try {
 
         const billingData = {
             billing_data: {
@@ -16,10 +20,29 @@ const createPayment = async (userData, paymentAmount) => {
             pay_using: config.PAYMENT.PAY_USING
         }
 
-        const response = await paymentRequest.post('/payments/pay/variable-amount', billingData)
+        const response = await paymentRequest.post('/api/v1/payments/pay/variable-amount', billingData)
 
-        return response.data
+        return { isAccepted: true, data: response.data }
+
+    } catch(error) {
+
+        return { isAccepted: false, error: error.response.data }
+    }
+}
+
+const checkPayment = async (transactionUUID) => {
+
+    try {
+
+        const response = await paymentRequest
+        .get(`/api/v1/communities/${config.PAYMENT.COMMUNITY_ID}/transactions/${transactionUUID}`)
+
+        return { isAccepted: true, data: response.data }
+
+    } catch(error) {
+        return { isAccepted: false, error: error.response.data }
+    }
 }
 
 
-module.exports = { createPayment }
+module.exports = { createPayment, checkPayment }

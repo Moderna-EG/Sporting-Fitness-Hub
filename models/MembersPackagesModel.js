@@ -9,12 +9,8 @@ const MembersPackagesSchema = new mongoose.Schema({
     paymentMethod: { type: String, default: 'CASH', enum: ['CASH', 'CARD', 'cash', 'card'] },
     registrationMethod: { type: String, required: true, enum: ['ONLINE', 'OFFLINE', 'online', 'offline'] },
     attended: { type: Number, default: 0 },
-    transaction: {
-        transactionId: { type: Number },
-        transactionStatus: { type: String },
-        transactionUUID: { type: String },
-        transactionAmount: { type: Number }
-    }
+    transactionUUID: { type: String },
+    transactionAmount: { type: Number }
 
 }, { timestamps: true })
 
