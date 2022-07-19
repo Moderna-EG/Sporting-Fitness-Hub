@@ -2,10 +2,12 @@ const config = require('../config/config')
 const packageModel = require('../models/PackageModel')
 const userModel = require('../models/UserModel')
 const memberPackageModel = require('../models/MembersPackagesModel')
+const transactionModel = require('../models/TransactionModel')
 const { isObjectId, isClubValid, isRegistrationMethodValid, isPaymentMethodValid, isUUIDValid } = require('../utils/utils')
 const UserModel = require('../models/UserModel')
 const mongoose = require('mongoose')
 const payment = require('../payment/x-pay')
+const TransactionModel = require('../models/TransactionModel')
 
 const getRegisteredPackages = async (request, response) => {
 
@@ -306,6 +308,13 @@ const registerOnlinePackage = async (request, response) => {
 
             const { transactionUUID, transactionAmount } = request.body
 
+            if(!Number.isInteger(transactionAmount)) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction amount is required to be a number'
+                })
+            }
+
             if(!transactionUUID) {
                 return response.status(406).json({
                     ok: false,
@@ -320,6 +329,16 @@ const registerOnlinePackage = async (request, response) => {
                 })
             }
 
+            const checkTransactionOwner = await transactionModel
+            .find({ memberId: userId, transactionUUID })
+
+            if(checkTransactionOwner.length == 0) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction UUID is not created by a member'
+                })
+            }
+
             const usedTransactionUUID = await memberPackageModel
             .find({ transactionUUID })
 
@@ -327,13 +346,6 @@ const registerOnlinePackage = async (request, response) => {
                 return response.status(406).json({
                     ok: false,
                     message: 'transaction UUID is already used'
-                })
-            }
-
-            if(!Number.isInteger(transactionAmount)) {
-                return response.status(406).json({
-                    ok: false,
-                    message: 'transaction amount is required to be a number'
                 })
             }
 
@@ -437,8 +449,12 @@ const payOnline = async (request, response) => {
             })
         }
 
-        const updatePackagePaymentStatus = await memberPackageModel
-        .findOneAndUpdate({ userId: memberId }, { transactionUUID: transaction.data.data.transaction_uuid })
+        const newTransactionData = {
+            transactionUUID: transaction.data.data.transaction_uuid,
+            memberId
+        }
+        const createTransaction = new transactionModel(newTransactionData)
+        const newTransaction = await createTransaction.save()
 
         return response.status(200).json({
             ok: true,
@@ -467,6 +483,16 @@ const checkTransaction = async (request, response) => {
                 message: 'invalid transaction UUID'
             })
         }
+
+        const checkTransactionOwner = await transactionModel
+            .find({ transactionUUID })
+
+            if(checkTransactionOwner.length == 0) {
+                return response.status(406).json({
+                    ok: false,
+                    message: 'transaction UUID is not created by a member'
+                })
+            }
 
         const transaction = await payment.checkPayment(transactionUUID)
 
@@ -500,7 +526,7 @@ const checkTransaction = async (request, response) => {
         })
 
     } catch(error) {
-        console.error(error.response.data)
+        console.error(error.response)
         return response.status(500).json({
             ok: false,
             message: 'internal server error',
