@@ -1,4 +1,5 @@
 const packageModel = require('../models/PackageModel')
+const registeredPackageModel = require('../models/MembersPackagesModel')
 const UserModel = require('../models/UserModel')
 const { isObjectId } = require('../utils/validateObjectId')
 
@@ -187,6 +188,16 @@ const deletePackage = async (request, response) => {
             return response.status(406).json({
                 ok: false,
                 message: 'invalid package Id'
+            })
+        }
+
+        const regsiteredPackageList = await registeredPackageModel.find({ packageId })
+
+        if(regsiteredPackageList.length != 0) {
+
+            return response.status(406).json({
+                ok: false,
+                message: 'the package is already registered with other members'
             })
         }
 

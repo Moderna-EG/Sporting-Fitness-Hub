@@ -233,6 +233,34 @@ const memberSignUp = async (request, response) => {
                 field: 'username'
             })
         }
+
+        if(!username.includes(' ')) {
+            return response.status(406).json({
+                ok: false,
+                message: 'username must be two words',
+                field: 'username'
+            })
+        }
+
+        const splitName = username.split(' ')
+
+        if(splitName.length != 2) {
+
+            return response.status(406).json({
+                ok: false,
+                message: 'username must be two words',
+                field: 'username'
+            })
+        }
+
+        if(!isUsernameValid(username)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid username',
+                field: 'username'
+            })
+        }
+
         if(!email) {
             return response.status(406).json({
                 ok: false,
@@ -240,11 +268,22 @@ const memberSignUp = async (request, response) => {
                 field: 'email'
             })
         }
+
+        if(!isEmailValid(email)) {
+
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid email formate',
+                field: 'email'
+            })
+        }
+
         const usedEmail = await userModel.find({ email: email })
         if(usedEmail.length != 0) {
             return response.status(406).json({
                 ok: false,
-                message: 'email is already used'
+                message: 'email is already used',
+                field: 'email'
             })
         }
 
@@ -266,7 +305,16 @@ const memberSignUp = async (request, response) => {
         if(phone.length != 11) {
             return response.status(406).json({
                 ok: false,
-                message: 'phone must be 11 numbers'
+                message: 'phone must be 11 numbers',
+                field: 'phone'
+            })
+        }
+
+        if(!isPhoneValid(phone)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'phone',
+                field: 'phone'
             })
         }
 
@@ -299,6 +347,14 @@ const memberSignUp = async (request, response) => {
             return response.status(406).json({
                 ok: false,
                 message: 'membership is required',
+                field: 'membership'
+            })
+        }
+
+        if(!isMembershipValid(membership)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid membership formate',
                 field: 'membership'
             })
         }

@@ -1,5 +1,6 @@
 const userModel = require('../models/UserModel')
-const { isClubValid, isObjectId } = require('../utils/utils')
+const registeredPackageModel = require('../models/MembersPackagesModel')
+const { isClubValid, isObjectId, isPhoneValid, isUsernameValid, isEmailValid } = require('../utils/utils')
 const bcrypt = require('bcrypt')
 const config = require('../config/config')
 
@@ -40,6 +41,31 @@ const addUser = async (request, response) => {
                 field: 'username'
             })
         }
+
+        if(!username.includes(' ')) {
+            return response.status(406).json({
+                ok: false,
+                message: 'username must be two words'
+            })
+        }
+
+        const splitName = username.split(' ')
+
+        if(splitName.length != 2) {
+            return response.status(406).json({
+                ok: false,
+                message: 'username must be two words'
+            })
+        }
+
+        if(!isUsernameValid(username)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'username contains invalid characters',
+                field: 'username'
+            })
+        }
+
         if(!email) {
             return response.status(406).json({
                 ok: false,
@@ -47,6 +73,15 @@ const addUser = async (request, response) => {
                 field: 'email'
             })
         }
+
+        if(!isEmailValid(email)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid email formate',
+                field: 'email'
+            })
+        }
+
         const usedEmail = await userModel.find({ email: email })
         if(usedEmail.length != 0) {
             return response.status(406).json({
@@ -76,6 +111,14 @@ const addUser = async (request, response) => {
             return response.status(406).json({
                 ok: false,
                 message: 'phone number must be 11 numbers',
+                field: 'phone'
+            })
+        }
+
+        if(!isPhoneValid(phone)) {
+            return response.status(406).json({
+                ok: false,
+                message: 'invalid phone formate',
                 field: 'phone'
             })
         }
@@ -224,6 +267,16 @@ const deleteUser = async (request, response) => {
             })
         }
 
+        const userPackages = await registeredPackageModel.find({ registrationUserId: userId })
+
+        if(userPackages.length != 0) {
+
+            return response.status(406).json({
+                ok: false,
+                message: 'members packages are registered with that user'
+            })
+        }
+
         await userModel.findByIdAndDelete(userId)
 
         return response.status(200).json({
@@ -322,6 +375,15 @@ const deleteMember = async (request, response) => {
             return response.status(406).json({
                 ok: false,
                 message: 'invalid member Id'
+            })
+        }
+
+        const memberPackages = await registeredPackageModel.find({ userId: memberId })
+
+        if(memberPackages.length != 0) {
+            return response.status(406).json({
+                ok: false,
+                message: 'member has already registered packages'
             })
         }
 
